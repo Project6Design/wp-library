@@ -1,0 +1,21 @@
+{
+    "name": "Project6Desin/wp-library",
+    "description": "Useful classes for Wordpress development.",
+    "license": "MIT",
+    "type": "library",
+    "homepage": "https://github.com/Project6Design/wp-library",
+    "authors": [
+        {
+            "name": "Johannes Schmidt",
+            "email": "johannes@project6.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Project6": "src"
+        }
+    }
+}
