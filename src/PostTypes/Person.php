@@ -47,9 +47,6 @@ class Person extends PostType {
         ],
       ]
     );
-
-
-    // add_filter('wp_insert_post_data', [$this, 'updatePersonTitle'], '99', 2);
   }
 
 }

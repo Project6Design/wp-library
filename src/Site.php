@@ -3,39 +3,23 @@
 namespace Project6;
 
 use Project6\PostTypes\PostType;
-use Timber\Site as BaseSite;
 
-abstract class Site extends BaseSite
+abstract class Site
 {
   protected $postTypes = [];
 
   public function __construct()
   {
-    parent::__construct();
-  }
-
-  /**
-   * Initialize the site.
-   */
-  public function init()
-  {
-    if (function_exists('acf_add_options_page')) {
-      acf_add_options_page();
-    }
+    add_filter('default_hidden_meta_boxes', [$this, 'hideMetaBox'], 10, 2);
+    add_action('init', [$this, 'removeRoles']);
+    add_action('admin_menu', [$this, 'hideDefaultPostType']);
 
     add_filter('timber_context', [$this, 'addToContext']);
     add_filter('get_twig', [$this, 'addToTwig']);
-    add_filter('login_headerurl', [$this, 'logoUrl']);
-    add_filter('default_hidden_meta_boxes', [$this, 'hideMetaBox'], 10, 2);
 
-    add_action('init', [$this, 'removeRoles']);
-    add_action('after_setup_theme', [$this, 'themeSupports']);
-    add_action('login_head', [$this, 'loginStylesheet']);
-
-    $this->registerPostTypes();
-    $this->registerRoutes();
+    // Add ACF options page.
+    acf_add_options_page();
   }
-
 
   /**
    * Add a new post type to the site
@@ -57,17 +41,6 @@ abstract class Site extends BaseSite
         add_action('init', [$postType, 'register']);
       }
     }
-  }
-
-  /**
-   * Register post type shortcodes and custom.
-   */
-  public function registerShortCodes()
-  {
-    // Custom shortcodes.
-
-
-    // Post type short codes.
   }
 
   /**
@@ -115,44 +88,6 @@ abstract class Site extends BaseSite
   }
 
   /**
-   * Timber hook. Add more items to the global context
-   * @param type $context
-   */
-  public function addToContext($context)
-  {
-    // $main_menu = new \TimberMenu(2);
-    // $footer_menu = new \TimberMenu(3);
-
-    // $context['menu']['main'] = $main_menu->get_items();
-    // $context['menu']['footer'] = $footer_menu->get_items();
-
-    // $context['menu']['mobile'] = array_merge($main_menu->get_items(), $footer_menu->get_items());
-
-    // Add ACF options.
-    $context['options'] = get_fields('options');
-
-    $context['site'] = $this;
-    $context['site']->live = isset($_SERVER['PANTHEON_ENVIRONMENT']) && $_SERVER['PANTHEON_ENVIRONMENT'] === 'live';
-
-    return $context;
-  }
-
-  /**
-   * Timber hook. Extend Twig functionality.
-   * @param type $twig
-   */
-  public function addToTwig($twig)
-  {
-
-    $twig->addExtension( new \Twig_Extension_StringLoader() );
-
-    // Convert all internal absolute links into relative links.
-    $twig->addFilter('relative_links', new \Twig_SimpleFilter('relative_links', array($this, 'relativeLinks')));
-
-    return $twig;
-  }
-
-  /**
    * Remove unused roles from Wordpress.
    */
   public function removeRoles()
@@ -192,14 +127,57 @@ abstract class Site extends BaseSite
 
     $hidden = [];
 
-    if ( ('post' == $screen->base) && in_array($screen->id, $post_types) ){
-      //lets hide everything
-      $hidden = [
-          'person_rolediv'
-      ];
-    }
+    // if ( ('post' == $screen->base) && in_array($screen->id, $post_types) ){
+    //   //lets hide everything
+    //   $hidden = [
+    //       'person_rolediv'
+    //   ];
+    // }
 
     return $hidden;
+  }
+
+  function hideDefaultPostType() {
+    remove_menu_page('edit.php');
+  }
+
+  public function addToContext( $context ) {
+    $main_menu = new \TimberMenu();
+    // $footer_menu = new \TimberMenu(3);
+    // $other_menu = new \TimberMenu(4);
+
+    $context['menu']['main'] = $main_menu->get_items();
+    // $context['menu']['footer'] = $footer_menu->get_items();
+    // $context['menu']['other'] = $other_menu->get_items();
+    // $context['menu']['mobile'] = array_merge($main_menu->get_items(), $footer_menu->get_items());
+
+    // Add ACF options.
+    $context['options'] = get_fields('options');
+
+    $context['site'] = $this;
+
+    return $context;
+  }
+
+  public function environment()
+  {
+    $env = 'local';
+
+    if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
+      $env = $_SERVER['PANTHEON_ENVIRONMENT'];
+    }
+
+    return $env;
+  }
+
+  public function addToTwig( $twig ) {
+
+    $twig->addExtension( new \Twig_Extension_StringLoader() );
+
+    // Convert all internal absolute links into relative links.
+    $twig->addFilter('relative_links', new \Twig_SimpleFilter('relative_links', array($this, 'relativeLinks')));
+
+    return $twig;
   }
 
   public function relativeLinks( $text ) {
@@ -213,61 +191,5 @@ abstract class Site extends BaseSite
     $text = str_replace($targets, '', $text);
 
     return $text;
-  }
-
-  public function themeSupports() {
-    // Add default posts and comments RSS feed links to head.
-    add_theme_support( 'automatic-feed-links' );
-
-    /*
-     * Let WordPress manage the document title.
-     * By adding theme support, we declare that this theme does not use a
-     * hard-coded <title> tag in the document head, and expect WordPress to
-     * provide it for us.
-     */
-    add_theme_support( 'title-tag' );
-
-    /*
-     * Enable support for Post Thumbnails on posts and pages.
-     *
-     * @link https://developer.wordpress.org/themes/functionality/featured-images-post-thumbnails/
-     */
-    add_theme_support( 'post-thumbnails' );
-
-    /*
-     * Switch default core markup for search form, comment form, and comments
-     * to output valid HTML5.
-     */
-    add_theme_support(
-      'html5', array(
-        'comment-form',
-        'comment-list',
-        'gallery',
-        'caption',
-      )
-    );
-
-    /*
-     * Enable support for Post Formats.
-     *
-     * See: https://codex.wordpress.org/Post_Formats
-     */
-    add_theme_support(
-      'post-formats', array(
-        'aside',
-        'image',
-        'video',
-        'quote',
-        'link',
-        'gallery',
-        'audio',
-      )
-    );
-
-    add_theme_support( 'menus' );
-  }
-
-  public function loginStylesheet() {
-    echo '<link rel="stylesheet" type="text/css" href="' . get_bloginfo('stylesheet_directory') . '/css/site.css" />';
-  }
+    }
 }
