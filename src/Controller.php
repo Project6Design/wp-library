@@ -4,7 +4,7 @@ namespace Project6;
 
 use Project6\PostTypes\PostType;
 
-abstract class Site
+abstract class Controller
 {
   protected $postTypes = [];
 
@@ -137,24 +137,22 @@ abstract class Site
     return $hidden;
   }
 
-  function hideDefaultPostType() {
+  public function hideDefaultPostType()
+  {
     remove_menu_page('edit.php');
   }
 
-  public function addToContext( $context ) {
+  public function addToContext($context)
+  {
     $main_menu = new \TimberMenu();
-    // $footer_menu = new \TimberMenu(3);
-    // $other_menu = new \TimberMenu(4);
 
     $context['menu']['main'] = $main_menu->get_items();
-    // $context['menu']['footer'] = $footer_menu->get_items();
-    // $context['menu']['other'] = $other_menu->get_items();
-    // $context['menu']['mobile'] = array_merge($main_menu->get_items(), $footer_menu->get_items());
+    $context['menu']['mobile'] = $main_menu->get_items();
 
     // Add ACF options.
     $context['options'] = get_fields('options');
 
-    $context['site'] = $this;
+    $context['controller'] = $this;
 
     return $context;
   }
